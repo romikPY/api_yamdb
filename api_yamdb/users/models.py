@@ -1,6 +1,6 @@
-from django.db import models
 # from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 # User = get_user_model()
 
@@ -9,7 +9,7 @@ class User(AbstractUser):
     USER = 'user'
     MODERATOR = 'moderator'
     ADMIN = 'admin'
-    ROLS = [(ADMIN, 'admin'), (MODERATOR, 'moderator'), (USER,'user')]
+    ROLS = [(ADMIN, 'admin'), (MODERATOR, 'moderator'), (USER, 'user')]
 
     email = models.EmailField(
         max_length=254,
@@ -39,6 +39,14 @@ class User(AbstractUser):
                 name='username_not_me'
             )
         ]
+
+    @property
+    def is_moderator(self):
+        return self.role == 'moderator'
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin' or self.is_superuser
 
     def __str__(self):
         return self.username
