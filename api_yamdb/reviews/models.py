@@ -3,8 +3,9 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 from users.models import User
 
+
 class Category(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
+    name = models.CharField('Категория', max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self):
@@ -12,7 +13,7 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
+    name = models.CharField('Жанр', max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self):
@@ -35,6 +36,12 @@ class Title (models.Model):
         related_name='titles',
         blank=True, null=True,
         verbose_name='Категория'
+    )
+    rating = models.IntegerField(
+        verbose_name='Рейтинг',
+        null=True,
+        blank=True,
+        default=None
     )
 
     def __str__(self):
