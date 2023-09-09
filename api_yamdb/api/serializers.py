@@ -1,11 +1,34 @@
 from datetime import datetime
 
 from django.db.models import Avg
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
 from reviews.models import Category, Genre, Title, Review, Comment, User
+
+
+class RegistratonSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True, max_length=150, validators=[UniqueValidator(queryset=User.objects.all())])
+    email = serializers.EmailField(required=True, max_length=254)
+
+    def validate_username(self, value):
+        if value == 'me':
+            raise ValidationError('Имя пользователя "me" запрещено!')
+        if User.objects.filter(username=value):
+            raise ValidationError(f'Пользователь с именем {value} уже есть!')
+        return value
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value):
+            raise ValidationError(f'Пользователь с почтой {value} уже есть!')
+        return value
+
+
+class TokenSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True, max_length=150)
+    confirmation_code = serializers.CharField(required=True)
 
 
 class ReviewSerializer(serializers.ModelSerializer):

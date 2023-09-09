@@ -1,7 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from api.views import CommentViewSet, ReviewViewSet, UserViewSet
+from api.views import (
+    CommentViewSet, ReviewViewSet, APIRegistration, APIToken, UserViewSet
+)
 from .views import (
     CategoryViewSet, GenreViewSet, TitleViewSet
 )
@@ -26,6 +28,6 @@ v1_router.register(
 
 urlpatterns = [
     path('v1/', include(v1_router.urls)),
-    # path('v1/auth/signup/', signup, name='signup'),
-    # path('v1/auth/token/', send_token, name='send_token'),
+    path('v1/auth/signup/', APIRegistration.as_view(), name='signup'),
+    path('v1/auth/token/', APIToken.as_view(), name='send_token'),
 ]

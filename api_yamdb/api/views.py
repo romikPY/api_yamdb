@@ -1,8 +1,14 @@
 
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from rest_framework import filters, mixins, permissions, viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework_simplejwt.tokens import AccessToken
 
 from .filters import TitleFieldsfilter
 from .permissions import AdminOrReadOnly
@@ -10,10 +16,48 @@ from .serializers import (
     CategorySerializer, GenreSerializer,
     TitleSerializer, TitleReadOnlySerializer
 )
-from reviews.models import Category, Genre, Title, User
+from reviews.models import Category, Genre, Title
+from users.models import User
 from api.serializers import (
-    ReviewSerializer, CommentSerializer, UserSerializer
+    ReviewSerializer, CommentSerializer,
+    RegistratonSerializer, TokenSerializer, UserSerializer
 )
+
+
+class APIRegistration(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = RegistratonSerializer(data=request.data)
+        if serializer.is_valid():
+            new_user = User.objects.create(**serializer.data)
+            token = default_token_generator.make_token(new_user)
+            send_mail(
+                'Subject here',
+                f'Yor token: "{token}"',
+                'from@example.com',
+                [serializer.validated_data['email']],
+                fail_silently=True,
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class APIToken(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = TokenSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            user = get_object_or_404(User, username=username)
+            confirmation_code = serializer.validated_data['confirmation_code']
+            if not default_token_generator.check_token(user, confirmation_code):
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            token = AccessToken.for_user(user)
+            return Response({'token': str(token)}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class CreateListDestroyViewSet(
@@ -91,12 +135,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, review=self.get_review())
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-# def signup(request):
-#     pass
-
-# def send_token(request):
-#     pass
