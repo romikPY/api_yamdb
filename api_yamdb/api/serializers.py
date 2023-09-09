@@ -1,29 +1,30 @@
 from datetime import datetime
 
 from django.db.models import Avg
-from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-
+from django.core.exceptions import ValidationError
 from reviews.models import Category, Genre, Title, Review, Comment, User
 
 
 class RegistratonSerializer(serializers.Serializer):
-    username = serializers.CharField(required=True, max_length=150, validators=[UniqueValidator(queryset=User.objects.all())])
+    username = serializers.RegexField(required=True, max_length=150, regex=r'^[\w.@+-]+$')
     email = serializers.EmailField(required=True, max_length=254)
 
-    def validate_username(self, value):
-        if value == 'me':
-            raise ValidationError('Имя пользователя "me" запрещено!')
-        if User.objects.filter(username=value):
-            raise ValidationError(f'Пользователь с именем {value} уже есть!')
-        return value
+    def validate(self, data):
+        if data.get('username') == 'me':
+            raise serializers.ValidationError
+        if User.objects.filter(username=data.get('username')).filter(email=data.get('email')):
+            return data
+        if User.objects.filter(username=data.get('username')):
+            raise serializers.ValidationError('Пользователь с таким username '
+                                              'уже существует.')
 
-    def validate_email(self, value):
-        if User.objects.filter(email=value):
-            raise ValidationError(f'Пользователь с почтой {value} уже есть!')
-        return value
+        if User.objects.filter(email=data.get('email')):
+            raise serializers.ValidationError('Пользователь с таким email '
+                                              'уже существует.')
+        return data
 
 
 class TokenSerializer(serializers.Serializer):
@@ -35,9 +36,10 @@ class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для Review модели"""
     title = serializers.SlugRelatedField(
         slug_field='name',
-        read_only=True
+        read_only=True,
+        default=serializers.CurrentUserDefault()
     )
-    auhor = serializers.SlugRelatedField(
+    author = serializers.SlugRelatedField(
         read_only=True, default=serializers.CurrentUserDefault(),
         slug_field='username'
     )
@@ -49,7 +51,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset=Review.objects.all(),
-                fields=['author', 'title']
+                fields=('title', 'author')
             )
         ]
 
@@ -101,9 +103,10 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = (
-            'name', 'year', 'description', 'genre', 'category'
-        )
+        fields = '__all__'
+        # fields = (
+        #    'name', 'year', 'description', 'genre', 'category'
+        # )
 
         def validate_year(self, value):
             if value >= datetime.now().year:
@@ -125,16 +128,19 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
             'description', 'genre', 'category'
         )
 
-        def get_rating(self, obj):
-            rating = Review.objects.filter(
-                title=obj.id).aggregate(Avg('score'))
-            return rating
+    def get_rating(self, obj):
+        rating = Review.objects.filter(
+            title=obj.id).aggregate(Avg('score'))
+        return rating['score__avg']
 
 
 class UserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=True, max_length=150, validators=[UniqueValidator(queryset=User.objects.all())])
+    username = serializers.RegexField(required=True, max_length=150, regex=r'^[\w.@+-]+$')
     email = serializers.EmailField(required=True, max_length=254)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        )
+        
