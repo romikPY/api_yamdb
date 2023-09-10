@@ -9,24 +9,41 @@ api yamdb
 Как запустить проект:
 Клонировать репозиторий и перейти в него в командной строке:
 
-git clone https://github.com/romikpy/api_yamdb.git
+```
+git clone <https or SSH URL>
+```
+```
 cd api_yamdb
+```
 Cоздать и активировать виртуальное окружение:
-
+```
 python -m venv venv
+```
+```
 source venv/scripts/activate
+```
 Установить зависимости из файла requirements.txt:
-
+```
 python -m pip install --upgrade pip
+```
+```
 pip install -r requirements.txt
+```
 
 Выполнить миграции:
-
+```
 python manage.py migrate
+```
+
+Импортировать базу данных:
+```
+python manage.py importcsv
+```
 
 Запустить проект:
-
+```
 python manage.py runserver
+```
 
 ## Примеры работы с API
 *Авторизация*:
@@ -92,3 +109,8 @@ DELETE api/v1/titles/{title_id}/ - удалить произведение по 
 
 PATCH api/v1/users/{username}/ - частично обновить информацию по username
 PATCH /api/v1/titles/{titles_id}/ - частично обновить информацию у произведения по id
+
+## Документация к API
+Будет доступна после запуска сервера по адресу http://127.0.0.1:8000/redoc/
+
+### Авторы [Дарья Леонова](https://github.com/AlisaLi1981) и [Роман Козлов](https://github.com/romikPY)
