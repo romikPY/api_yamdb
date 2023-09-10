@@ -1,15 +1,17 @@
-# from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
-# User = get_user_model()
+from django.core.validators import RegexValidator
 
 
 class User(AbstractUser):
     USER = 'user'
     MODERATOR = 'moderator'
     ADMIN = 'admin'
-    ROLS = [(ADMIN, 'admin'), (MODERATOR, 'moderator'), (USER, 'user')]
+    ROLS = [
+        (ADMIN, 'admin'),
+        (MODERATOR, 'moderator'),
+        (USER, 'user')
+    ]
 
     email = models.EmailField(
         max_length=254,
@@ -19,7 +21,8 @@ class User(AbstractUser):
     username = models.TextField(
         max_length=150,
         verbose_name='Имя пользователя',
-        unique=True
+        unique=True,
+        validators=[RegexValidator(r'^[\w.@+-]+$')]
     )
     role = models.CharField(
         max_length=25,
@@ -27,7 +30,10 @@ class User(AbstractUser):
         choices=ROLS,
         default=USER
     )
-    bio = models.TextField(verbose_name='Описание', null=True, blank=True)
+    bio = models.TextField(
+        verbose_name='Описание',
+        null=True, blank=True
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

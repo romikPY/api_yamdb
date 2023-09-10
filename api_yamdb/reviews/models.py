@@ -3,6 +3,9 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 from users.models import User
 
+MIN_VALUE = 1
+MAX_VALUE = 10
+
 
 class Category(models.Model):
     name = models.CharField('Категория', max_length=256)
@@ -65,7 +68,7 @@ class Review(models.Model):
     text = models.TextField()
     score = models.PositiveIntegerField(
         verbose_name='Оценка произведения',
-        validators=[MinValueValidator(1), MaxValueValidator(10)]
+        validators=[MinValueValidator(MIN_VALUE), MaxValueValidator(MAX_VALUE)]
     )
     pub_date = models.DateTimeField(
         'Дата добавления',
