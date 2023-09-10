@@ -1,10 +1,16 @@
 from django.db import models
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    MaxValueValidator, MinValueValidator
+)
 
 from users.models import User
 
+MIN_VALUE = 1
+MAX_VALUE = 10
+
+
 class Category(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
+    name = models.CharField('Категория', max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self):
@@ -12,7 +18,7 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
+    name = models.CharField('Жанр', max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self):
@@ -36,6 +42,12 @@ class Title (models.Model):
         blank=True, null=True,
         verbose_name='Категория'
     )
+    rating = models.IntegerField(
+        verbose_name='Рейтинг',
+        null=True,
+        blank=True,
+        default=None
+    )
 
     def __str__(self):
         return self.name
@@ -58,7 +70,7 @@ class Review(models.Model):
     text = models.TextField()
     score = models.PositiveIntegerField(
         verbose_name='Оценка произведения',
-        validators=[MinValueValidator(1), MaxValueValidator(10)]
+        validators=[MinValueValidator(MIN_VALUE), MaxValueValidator(MAX_VALUE)]
     )
     pub_date = models.DateTimeField(
         'Дата добавления',
