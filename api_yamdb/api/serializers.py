@@ -3,18 +3,54 @@ from datetime import datetime
 from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
-from reviews.models import Category, Genre, Title, Review, Comment, User
+from reviews.models import Category, Genre, Title, Review, Comment
+from users.models import User
+
+
+class RegistratonSerializer(serializers.Serializer):
+    username = serializers.RegexField(
+        required=True, max_length=150, regex=r'^[\w.@+-]+\Z'
+    )
+    email = serializers.EmailField(required=True, max_length=254)
+
+    def validate(self, data):
+        if data.get('username') == 'me':
+            raise serializers.ValidationError
+        if User.objects.filter(
+                username=data.get('username')).filter(email=data.get('email')
+                                                      ):
+            return data
+        if User.objects.filter(username=data.get('username')):
+            raise serializers.ValidationError('Пользователь с таким username '
+                                              'уже существует.')
+
+        if User.objects.filter(email=data.get('email')):
+            raise serializers.ValidationError('Пользователь с таким email '
+                                              'уже существует.')
+        return data
+
+
+class TokenSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True, max_length=150)
+    confirmation_code = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'confirmation_code'
+        )
 
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для Review модели"""
     title = serializers.SlugRelatedField(
         slug_field='name',
-        read_only=True
+        read_only=True,
+        default=serializers.CurrentUserDefault()
     )
-    auhor = serializers.SlugRelatedField(
+    author = serializers.SlugRelatedField(
         read_only=True, default=serializers.CurrentUserDefault(),
         slug_field='username'
     )
@@ -22,13 +58,6 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Review
-
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Review.objects.all(),
-                fields=['author', 'title']
-            )
-        ]
 
     def validate(self, data):
         author = self.context['request'].user
@@ -78,9 +107,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = (
-            'name', 'year', 'description', 'genre', 'category'
-        )
+        fields = '__all__'
 
         def validate_year(self, value):
             if value >= datetime.now().year:
@@ -102,16 +129,16 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
             'description', 'genre', 'category'
         )
 
-        def get_rating(self, obj):
-            rating = Review.objects.filter(
-                title=obj.id).aggregate(Avg('score'))
-            return rating
+    def get_rating(self, obj):
+        rating = Review.objects.filter(
+            title=obj.id).aggregate(Avg('score'))
+        return rating['score__avg']
 
 
 class UserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=True, max_length=150, validators=[UniqueValidator(queryset=User.objects.all())])
-    email = serializers.EmailField(required=True, max_length=254)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        )
