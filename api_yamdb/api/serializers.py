@@ -35,9 +35,9 @@ class TokenSerializer(serializers.Serializer):
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для Review модели"""
     title = serializers.SlugRelatedField(
+        default=Title.objects.all(),
         slug_field='name',
-        read_only=True,
-        default=serializers.CurrentUserDefault()
+        read_only=True
     )
     author = serializers.SlugRelatedField(
         read_only=True, default=serializers.CurrentUserDefault(),
@@ -51,7 +51,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset=Review.objects.all(),
-                fields=('title', 'author')
+                fields=['title', 'author']
             )
         ]
 
@@ -143,4 +143,11 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
-        
+    def validate_email(self, value):
+        if User.objects.filter(email=value):
+            raise ValidationError(f'Пользователь с почтой {value} уже есть!')
+        return value
+    def validate_username(self, value):
+        if User.objects.filter(username=value):
+            raise ValidationError(f'Пользователь с именем {value} уже есть!')
+        return value

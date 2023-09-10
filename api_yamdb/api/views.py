@@ -105,6 +105,7 @@ class GenreViewSet(CreateListDestroyViewSet):
     serializer_class = GenreSerializer
     permission_classes = [AdminOrReadOnly, ]
     filter_backends = (filters.SearchFilter,)
+    pagination_class = LimitOffsetPagination
     search_fields = ('name',)
     lookup_field = 'slug'
 
@@ -112,6 +113,7 @@ class GenreViewSet(CreateListDestroyViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [AuthorAdminModerator, ]
+    pagination_class = LimitOffsetPagination
     http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_title(self):
@@ -128,6 +130,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = [AuthorAdminModerator, ]
+    pagination_class = LimitOffsetPagination
     http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_title(self):
