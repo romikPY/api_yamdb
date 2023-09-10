@@ -31,6 +31,10 @@ class AuthorAdminModerator(permissions.BasePermission):
 
 
 class SuperUserOrAdmin(permissions.BasePermission):
+    """Действия доступны при наличии прав администратора."""
+
+    message = 'Недостаточно прав!'
+
     def has_permission(self, request, view):
         return request.user.is_authenticated and (
             request.user.is_admin or request.user.is_superuser)

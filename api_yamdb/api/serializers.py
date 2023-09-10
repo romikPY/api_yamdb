@@ -3,20 +3,23 @@ from datetime import datetime
 from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-# from django.core.exceptions import ValidationError
 
-from reviews.models import Category, Genre, Title, Review, Comment, User
+from reviews.models import Category, Genre, Title, Review, Comment
+from users.models import User
 
 
 class RegistratonSerializer(serializers.Serializer):
-    username = serializers.RegexField(required=True, max_length=150, regex=r'^[\w.@+-]+\Z')
+    username = serializers.RegexField(
+        required=True, max_length=150, regex=r'^[\w.@+-]+\Z'
+    )
     email = serializers.EmailField(required=True, max_length=254)
 
     def validate(self, data):
         if data.get('username') == 'me':
             raise serializers.ValidationError
-        if User.objects.filter(username=data.get('username')).filter(email=data.get('email')):
+        if User.objects.filter(
+                username=data.get('username')).filter(email=data.get('email')
+                                                      ):
             return data
         if User.objects.filter(username=data.get('username')):
             raise serializers.ValidationError('Пользователь с таким username '
@@ -55,13 +58,6 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Review
-
-       # validators = [
-        #    UniqueTogetherValidator(
-        #        queryset=Review.objects.all(),
-        #        fields=('title', 'author')
-        #    )
-        #]
 
     def validate(self, data):
         author = self.context['request'].user
@@ -140,8 +136,6 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # username = serializers.RegexField(required=True, max_length=150, regex=r'^[\w.@+-]+\Z')
-    # email = serializers.EmailField(required=True, max_length=254)
 
     class Meta:
         model = User

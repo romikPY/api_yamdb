@@ -2,14 +2,15 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from rest_framework import filters, mixins, permissions, viewsets
+from rest_framework import (
+    filters, mixins, permissions, status, viewsets
+)
+from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.decorators import action
 
 from .filters import TitleFieldsfilter
 from .permissions import (
@@ -54,8 +55,12 @@ class APIToken(APIView):
             username = serializer.validated_data['username']
             user = get_object_or_404(User, username=username)
             confirmation_code = serializer.validated_data['confirmation_code']
-            if not default_token_generator.check_token(user, confirmation_code):
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if not default_token_generator.check_token(
+                user, confirmation_code
+            ):
+                return Response(
+                    serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                )
             token = AccessToken.for_user(user)
             return Response({'token': str(token)}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
