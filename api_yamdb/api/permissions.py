@@ -7,9 +7,10 @@ class AdminOrReadOnly(permissions.BasePermission):
     message = 'Отсутствуют права админитсратора!'
 
     def has_permission(self, request, view):
-        return (request.method in permissions.SAFE_METHODS
-                or request.user.is_authenticated and (
-                    request.user.is_admin or request.user.is_superuser))
+        return (
+            request.method in permissions.SAFE_METHODS
+            or request.user.is_authenticated and request.user.is_admin
+        )
 
 
 class AuthorAdminModerator(permissions.BasePermission):
@@ -36,5 +37,4 @@ class SuperUserOrAdmin(permissions.BasePermission):
     message = 'Недостаточно прав!'
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            request.user.is_admin or request.user.is_superuser)
+        return request.user.is_authenticated and request.user.is_admin

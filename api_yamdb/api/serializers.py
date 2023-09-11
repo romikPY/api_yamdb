@@ -5,12 +5,14 @@ from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
 from reviews.models import Category, Genre, Title, Review, Comment
+from users.validators import me_username_validator, username_validator
 from users.models import User
 
 
 class RegistratonSerializer(serializers.Serializer):
-    username = serializers.RegexField(
-        required=True, max_length=150, regex=r'^[\w.@+-]+\Z'
+    username = serializers.CharField(
+        required=True, max_length=150,
+        validators=[me_username_validator, username_validator],
     )
     email = serializers.EmailField(required=True, max_length=254)
 
