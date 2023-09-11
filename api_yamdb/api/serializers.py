@@ -5,12 +5,14 @@ from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
 from reviews.models import Category, Genre, Title, Review, Comment
+from users.validators import me_username_validator, username_validator
 from users.models import User
 
 
 class RegistratonSerializer(serializers.Serializer):
-    username = serializers.RegexField(
-        required=True, max_length=150, regex=r'^[\w.@+-]+\Z'
+    username = serializers.CharField(
+        required=True, max_length=150,
+        validators=[me_username_validator, username_validator],
     )
     email = serializers.EmailField(required=True, max_length=254)
 
@@ -45,18 +47,13 @@ class TokenSerializer(serializers.Serializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для Review модели"""
-    title = serializers.SlugRelatedField(
-        slug_field='name',
-        read_only=True,
-        default=serializers.CurrentUserDefault()
-    )
     author = serializers.SlugRelatedField(
         read_only=True, default=serializers.CurrentUserDefault(),
         slug_field='username'
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
 
     def validate(self, data):
@@ -95,6 +92,8 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Title."""
+    # category = CategorySerializer(required=False)
+    # genre = GenreSerializer(many=True, required=False)
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug',
@@ -104,23 +103,7 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Genre.objects.all(),
         slug_field='slug',
     )
-
-    class Meta:
-        model = Title
-        fields = '__all__'
-
-        def validate_year(self, value):
-            if value >= datetime.now().year:
-                raise serializers.ValidationError(
-                    'Год выхода должен быть не позже текущего')
-            return value
-
-
-class TitleReadOnlySerializer(serializers.ModelSerializer):
-    """Сериализатор GET-запросов для модели Title."""
-    category = CategorySerializer(read_only=True)
-    genre = GenreSerializer(many=True, read_only=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Title
@@ -129,10 +112,25 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
             'description', 'genre', 'category'
         )
 
-    def get_rating(self, obj):
-        rating = Review.objects.filter(
-            title=obj.id).aggregate(Avg('score'))
-        return rating['score__avg']
+    def validate_year(self, value):
+        if value >= datetime.now().year:
+            raise serializers.ValidationError(
+                'Год выхода должен быть не позже текущего')
+        return value
+
+
+class TitleReadOnlySerializer(serializers.ModelSerializer):
+    """Сериализатор GET-запросов для модели Title."""
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
+    rating = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'rating',
+            'description', 'genre', 'category'
+        )
 
 
 class UserSerializer(serializers.ModelSerializer):
