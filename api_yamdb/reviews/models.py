@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.db import models
 from django.core.validators import (
     MaxValueValidator, MinValueValidator
@@ -30,7 +31,10 @@ class Title (models.Model):
         max_length=256,
         verbose_name='Название произведения'
     )
-    year = models.PositiveIntegerField(verbose_name='Год выхода')
+    year = models.PositiveIntegerField(
+        verbose_name='Год выхода',
+        validators=[MaxValueValidator(int(datetime.now().year))],
+    )
     description = models.TextField(blank=True, verbose_name='Описание')
     genre = models.ManyToManyField(
         Genre, related_name='titles',
@@ -41,12 +45,6 @@ class Title (models.Model):
         related_name='titles',
         blank=True, null=True,
         verbose_name='Категория'
-    )
-    rating = models.IntegerField(
-        verbose_name='Рейтинг',
-        null=True,
-        blank=True,
-        default=None
     )
 
     def __str__(self):

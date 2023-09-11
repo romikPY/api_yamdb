@@ -1,4 +1,4 @@
-
+from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -31,18 +31,17 @@ class APIRegistration(APIView):
 
     def post(self, request):
         serializer = RegistratonSerializer(data=request.data)
-        if serializer.is_valid():
-            user, _ = User.objects.get_or_create(**serializer.data)
-            token = default_token_generator.make_token(user)
-            send_mail(
-                'Subject here',
-                f'Yor token: "{token}"',
-                'from@example.com',
-                [serializer.validated_data['email']],
-                fail_silently=True,
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user, _ = User.objects.get_or_create(**serializer.data)
+        token = default_token_generator.make_token(user)
+        send_mail(
+            'Subject here',
+            f'Yor token: "{token}"',
+            'from@example.com',
+            [serializer.validated_data['email']],
+            fail_silently=True,
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class APIToken(APIView):
@@ -51,19 +50,18 @@ class APIToken(APIView):
 
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
-        if serializer.is_valid():
-            username = serializer.validated_data['username']
-            user = get_object_or_404(User, username=username)
-            confirmation_code = serializer.validated_data['confirmation_code']
-            if not default_token_generator.check_token(
-                user, confirmation_code
-            ):
-                return Response(
-                    serializer.errors, status=status.HTTP_400_BAD_REQUEST
-                )
-            token = AccessToken.for_user(user)
-            return Response({'token': str(token)}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data['username']
+        user = get_object_or_404(User, username=username)
+        confirmation_code = serializer.validated_data['confirmation_code']
+        if not default_token_generator.check_token(
+            user, confirmation_code
+        ):
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+        token = AccessToken.for_user(user)
+        return Response({'token': str(token)}, status=status.HTTP_200_OK)
 
 
 class CreateListDestroyViewSet(
@@ -78,7 +76,7 @@ class CreateListDestroyViewSet(
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Title."""
-    queryset = Title.objects.all()
+    queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
     permission_classes = [AdminOrReadOnly, ]
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
