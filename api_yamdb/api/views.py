@@ -34,10 +34,10 @@ class APIRegistration(APIView):
         serializer = RegistratonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, _ = User.objects.get_or_create(**serializer.data)
-        token = default_token_generator.make_token(user)
+        confirmation_code = default_token_generator.make_token(user) # переименовала поле, ибо нелогично было
         send_mail(
             'Subject here',
-            f'Yor token: "{token}"',
+            f'Yor confirmation_code: "{confirmation_code}"',
             DEFAULT_FROM_EMAIL,
             [serializer.validated_data['email']],
             fail_silently=True,
@@ -142,7 +142,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_review(self):
         title = self.get_title()
         review_id = self.kwargs.get('review_id')
-        review = get_object_or_404(title.reviews, pk=review_id)
+        review = title.reviews.get(pk=review_id)
         return review
 
     def get_queryset(self):
