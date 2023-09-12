@@ -47,7 +47,6 @@ class Title (models.Model):
         verbose_name='Категория'
     )
 
-
     def __str__(self):
         return self.name
 
@@ -106,5 +105,6 @@ class Comment(models.Model):
         'Дата добавления',
         auto_now_add=True
     )
+
     def __str__(self):
         return self.pub_date
