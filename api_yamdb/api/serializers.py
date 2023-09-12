@@ -1,6 +1,3 @@
-from datetime import datetime
-
-from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
@@ -92,8 +89,6 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Title."""
-    # category = CategorySerializer(required=False)
-    # genre = GenreSerializer(many=True, required=False)
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug',
@@ -103,20 +98,13 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Genre.objects.all(),
         slug_field='slug',
     )
-    rating = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating',
+            'id', 'name', 'year',
             'description', 'genre', 'category'
         )
-
-    def validate_year(self, value):
-        if value >= datetime.now().year:
-            raise serializers.ValidationError(
-                'Год выхода должен быть не позже текущего')
-        return value
 
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):

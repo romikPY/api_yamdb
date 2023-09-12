@@ -1,7 +1,6 @@
 import csv
 
 from django.core.management.base import BaseCommand
-from django.shortcuts import get_object_or_404
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
@@ -35,9 +34,9 @@ class Command(BaseCommand):
                         updated_row = {}
                         for field_name, value in row.items():
                             if field_name == 'category':
-                                value = get_object_or_404(Category, id=value)
+                                value = Category.objects.get(id=value)
                             elif field_name == 'author':
-                                value = get_object_or_404(User, id=value)
+                                value = User.objects.get(id=value)
                             updated_row[field_name] = value
                         model.objects.get_or_create(**updated_row)
                     print(file_name + 'Импортирован.')

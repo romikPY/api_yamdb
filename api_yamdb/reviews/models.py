@@ -106,6 +106,5 @@ class Comment(models.Model):
         'Дата добавления',
         auto_now_add=True
     )
-
     def __str__(self):
         return self.pub_date

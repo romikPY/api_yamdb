@@ -34,10 +34,10 @@ class APIRegistration(APIView):
         serializer = RegistratonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, _ = User.objects.get_or_create(**serializer.data)
-        token = default_token_generator.make_token(user)
+        confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Subject here',
-            f'Yor token: "{token}"',
+            f'Yor confirmation code: "{confirmation_code}"',
             DEFAULT_FROM_EMAIL,
             [serializer.validated_data['email']],
             fail_silently=True,
