@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.tokens import default_token_generator
@@ -23,7 +24,6 @@ from .serializers import (
 )
 from reviews.models import Category, Genre, Title
 from users.models import User
-from api_yamdb.settings import DEFAULT_FROM_EMAIL
 
 
 class APIRegistration(APIView):
@@ -31,18 +31,24 @@ class APIRegistration(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        serializer = RegistratonSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user, _ = User.objects.get_or_create(**serializer.data)
+        try:
+            user = User.objects.get(
+                username=request.data.get('username'),
+                email=request.data.get('email')
+            )
+        except Exception:
+            serializer = RegistratonSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user = User.objects.create(**serializer.data)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Subject here',
             f'Yor confirmation code: "{confirmation_code}"',
-            DEFAULT_FROM_EMAIL,
-            [serializer.validated_data['email']],
+            settings.DEFAULT_FROM_EMAIL,
+            [request.data.get('email')],
             fail_silently=True,
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(request.data, status=status.HTTP_200_OK)
 
 
 class APIToken(APIView):
@@ -53,13 +59,21 @@ class APIToken(APIView):
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data['username']
-        user = get_object_or_404(User, username=username)
+        try:
+            user = User.objects.get(username=username)
+        except Exception:
+            return Response(
+                {'username': ['Логин не найден']},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
         confirmation_code = serializer.validated_data['confirmation_code']
         if not default_token_generator.check_token(
             user, confirmation_code
         ):
             return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                {'confirmation_code': ['Некорректный код подтверждения!']},
+                status=status.HTTP_400_BAD_REQUEST
             )
         token = AccessToken.for_user(user)
         return Response({'token': str(token)}, status=status.HTTP_200_OK)

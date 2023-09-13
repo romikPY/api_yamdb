@@ -35,7 +35,7 @@ class User(AbstractUser):
     )
     bio = models.TextField(
         verbose_name='Описание',
-        null=True, blank=True
+        blank=True
     )
 
     USERNAME_FIELD = 'email'

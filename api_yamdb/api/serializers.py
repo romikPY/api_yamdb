@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
@@ -12,22 +15,23 @@ class RegistratonSerializer(serializers.Serializer):
         validators=[me_username_validator, username_validator],
     )
     email = serializers.EmailField(required=True, max_length=254)
+    first_name = serializers.CharField(max_length=150, required=False)
+    last_name = serializers.CharField(max_length=150, required=False)
+    bio = serializers.CharField(max_length=24, required=False)
 
-    def validate(self, data):
-        if data.get('username') == 'me':
-            raise serializers.ValidationError
-        if User.objects.filter(
-                username=data.get('username')).filter(email=data.get('email')
-                                                      ):
-            return data
-        if User.objects.filter(username=data.get('username')):
-            raise serializers.ValidationError('Пользователь с таким username '
-                                              'уже существует.')
+    def validate_username(self, value):
+        if User.objects.filter(username=value):
+            raise serializers.ValidationError(
+                f'Пользователь с именем {value} уже есть!'
+            )
+        return value
 
-        if User.objects.filter(email=data.get('email')):
-            raise serializers.ValidationError('Пользователь с таким email '
-                                              'уже существует.')
-        return data
+    def validate_email(self, value):
+        if User.objects.filter(email=value):
+            raise serializers.ValidationError(
+                f'Пользователь с почтой {value} уже есть!'
+            )
+        return value
 
 
 class TokenSerializer(serializers.Serializer):
@@ -98,13 +102,25 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Genre.objects.all(),
         slug_field='slug',
     )
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year',
+            'id', 'name', 'year', 'rating',
             'description', 'genre', 'category'
         )
+
+    def validate_year(self, value):
+        if value >= datetime.now().year:
+            raise serializers.ValidationError(
+                'Год выхода должен быть не позже текущего!')
+        return value
+
+    def get_rating(self, obj):
+        rating = Review.objects.filter(
+            title=obj.id).aggregate(Avg('score'))
+        return rating
 
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):
