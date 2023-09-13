@@ -1,5 +1,4 @@
-# from datetime import datetime
-
+from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
@@ -16,8 +15,6 @@ class RegistratonSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True, max_length=254)
 
     def validate(self, data):
-        if data.get('username') == 'me':
-            raise serializers.ValidationError
         if User.objects.filter(
                 username=data.get('username')).filter(email=data.get('email')
                                                       ):
@@ -100,19 +97,19 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Genre.objects.all(),
         slug_field='slug',
     )
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year',
+            'id', 'name', 'year', 'rating',
             'description', 'genre', 'category'
         )
 
-#    def validate_year(self, value): больше не нужен, т.к. реализован в модели!!!!!!!!
-#       if value >= datetime.now().year:
-#            raise serializers.ValidationError(
-#                'Год выхода должен быть не позже текущего')
-#       return value
+    def get_rating(self, obj):
+        rating = Review.objects.filter(
+            title=obj.id).aggregate(Avg('score'))
+        return rating
 
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):

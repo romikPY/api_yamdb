@@ -1,9 +1,11 @@
+from datetime import datetime
+from django.conf import settings
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from rest_framework import (
-    filters, mixins, permissions, status, viewsets
+    filters, mixins, permissions, serializers, status, viewsets
 )
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -23,7 +25,6 @@ from .serializers import (
 )
 from reviews.models import Category, Genre, Title
 from users.models import User
-from api_yamdb.settings import DEFAULT_FROM_EMAIL
 
 
 class APIRegistration(APIView):
@@ -34,11 +35,11 @@ class APIRegistration(APIView):
         serializer = RegistratonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, _ = User.objects.get_or_create(**serializer.data)
-        confirmation_code = default_token_generator.make_token(user) # переименовала поле, ибо нелогично было
+        confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Subject here',
             f'Yor confirmation_code: "{confirmation_code}"',
-            DEFAULT_FROM_EMAIL,
+            settings.DEFAULT_FROM_EMAIL,
             [serializer.validated_data['email']],
             fail_silently=True,
         )
@@ -59,7 +60,8 @@ class APIToken(APIView):
             user, confirmation_code
         ):
             return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                'Некорректный код подтверждения!',
+                status=status.HTTP_400_BAD_REQUEST
             )
         token = AccessToken.for_user(user)
         return Response({'token': str(token)}, status=status.HTTP_200_OK)
@@ -83,6 +85,12 @@ class TitleViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFieldsfilter
     http_method_names = ('get', 'post', 'patch', 'delete')
+
+    def validate_year(self, value):
+        if value >= datetime.now().year:
+            raise serializers.ValidationError(
+                'Год выхода должен быть не позже текущего!')
+        return value
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
