@@ -20,7 +20,7 @@ from .permissions import (
 from .serializers import (
     CategorySerializer, GenreSerializer, TitleSerializer,
     TitleReadOnlySerializer, ReviewSerializer, CommentSerializer,
-    RegistratonSerializer, TokenSerializer, UserSerializer
+    TokenSerializer, UserSerializer
 )
 from reviews.models import Category, Genre, Title
 from users.models import User
@@ -31,24 +31,42 @@ class APIRegistration(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        try:
-            user = User.objects.get(
-                username=request.data.get('username'),
-                email=request.data.get('email')
-            )
-        except Exception:
-            serializer = RegistratonSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+        serializer = UserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if User.objects.filter(username=serializer.validated_data['username']).filter(email=serializer.validated_data['email']):
+            user = User.objects.get(username=serializer.validated_data['username'], email=serializer.validated_data['email'])
+        else:
             user = User.objects.create(**serializer.data)
+        # user, create = User.objects.get_or_create(**serializer.data)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Subject here',
             f'Yor confirmation code: "{confirmation_code}"',
             settings.DEFAULT_FROM_EMAIL,
-            [request.data.get('email')],
+            [serializer.validated_data['email']],
             fail_silently=True,
         )
-        return Response(request.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # def post(self, request):
+    #     try:
+    #         user = User.objects.get(
+    #             username=request.data.get('username'),
+    #             email=request.data.get('email')
+    #         )
+    #     except Exception:
+    #         serializer = RegistratonSerializer(data=request.data)
+    #         serializer.is_valid(raise_exception=True)
+    #         user = User.objects.create(**serializer.data)
+    #     confirmation_code = default_token_generator.make_token(user)
+    #     send_mail(
+    #         'Subject here',
+    #         f'Yor confirmation code: "{confirmation_code}"',
+    #         settings.DEFAULT_FROM_EMAIL,
+    #         [request.data.get('email')],
+    #         fail_silently=True,
+    #     )
+    #     return Response(request.data, status=status.HTTP_200_OK)
 
 
 class APIToken(APIView):

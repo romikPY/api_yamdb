@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core import validators
 
 from .validators import me_username_validator, username_validator
 
@@ -24,7 +25,7 @@ class User(AbstractUser):
     email = models.EmailField(
         max_length=254,
         verbose_name='Почта',
-        unique=True
+        unique=True,
     )
 
     role = models.CharField(
@@ -46,7 +47,7 @@ class User(AbstractUser):
             models.CheckConstraint(
                 check=~models.Q(username='me'),
                 name='username_not_me'
-            )
+            ),
         ]
 
     def __str__(self):
