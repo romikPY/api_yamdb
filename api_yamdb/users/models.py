@@ -25,7 +25,6 @@ class User(AbstractUser):
     email = models.EmailField(
         max_length=254,
         verbose_name='Почта',
-        unique=True,
     )
 
     role = models.CharField(
@@ -39,8 +38,8 @@ class User(AbstractUser):
         blank=True
     )
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    # USERNAME_FIELD = 'email'
+    # REQUIRED_FIELDS = ['username']
 
     class Meta:
         constraints = [

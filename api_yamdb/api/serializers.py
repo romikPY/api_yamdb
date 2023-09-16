@@ -14,14 +14,20 @@ from users.models import User
 class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
         max_length=150,
-        validators=[me_username_validator, username_validator, UniqueValidator(queryset=User.objects.all())],
+        validators=[me_username_validator, username_validator],
     )
-    email = serializers.EmailField(max_length=254, validators=[UniqueValidator(queryset=User.objects.all())])
+    email = serializers.EmailField(max_length=254, required=True)
     class Meta:
         model = User
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
+    # def validate_email(self, value):
+    #     if User.objects.filter(email=value):
+    #         raise serializers.ValidationError(
+    #             f'Пользователь с почтой {value} уже есть!'
+    #         )
+    #     return value
         # validators = [
         #     UniqueTogetherValidator( 
         #         queryset=User.objects.all(), 
@@ -45,29 +51,29 @@ class UserSerializer(serializers.ModelSerializer):
     #     return value
 
 
-# class RegistratonSerializer(serializers.Serializer):
-#     username = serializers.CharField(
-#         required=True, max_length=150,
-#         validators=[me_username_validator, username_validator],
-#     )
-#     email = serializers.EmailField(required=True, max_length=254)
-#     first_name = serializers.CharField(max_length=150, required=False)
-#     last_name = serializers.CharField(max_length=150, required=False)
-#     bio = serializers.CharField(max_length=24, required=False)
+class RegistratonSerializer(serializers.Serializer):
+    username = serializers.CharField(
+        required=True, max_length=150,
+        validators=[me_username_validator, username_validator],
+    )
+    email = serializers.EmailField(required=True, max_length=254)
+    first_name = serializers.CharField(max_length=150, required=False)
+    last_name = serializers.CharField(max_length=150, required=False)
+    bio = serializers.CharField(max_length=24, required=False)
 
-#     def validate_username(self, value):
-#         if User.objects.filter(username=value):
-#             raise serializers.ValidationError(
-#                 f'Пользователь с именем {value} уже есть!'
-#             )
-#         return value
+    # def validate_username(self, value):
+    #     if User.objects.filter(username=value):
+    #         raise serializers.ValidationError(
+    #             f'Пользователь с именем {value} уже есть!'
+    #         )
+    #     return value
 
-#     def validate_email(self, value):
-#         if User.objects.filter(email=value):
-#             raise serializers.ValidationError(
-#                 f'Пользователь с почтой {value} уже есть!'
-#             )
-#         return value
+    # def validate_email(self, value):
+    #     if User.objects.filter(email=value):
+    #         raise serializers.ValidationError(
+    #             f'Пользователь с почтой {value} уже есть!'
+    #         )
+    #     return value
 
 
 class TokenSerializer(serializers.Serializer):
