@@ -33,7 +33,7 @@ class APIRegistration(APIView):
     def post(self, request):
         serializer = RegistratonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-    
+
         try:
             user = User.objects.get(
                 username=serializer.data['username'],
@@ -41,18 +41,22 @@ class APIRegistration(APIView):
             )
             confirmation_code = default_token_generator.make_token(user)
             send_mail(
-            'Subject here',
-            f'Yor confirmation code: "{confirmation_code}"',
-            settings.DEFAULT_FROM_EMAIL,
-            [serializer.data['email']],
-            fail_silently=True,
-        )
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+                'Subject here',
+                f'Yor confirmation code: "{confirmation_code}"',
+                settings.DEFAULT_FROM_EMAIL,
+                [serializer.data['email']],
+                fail_silently=True,
+            )
+            return Response(serializer.validated_data,
+                            status=status.HTTP_200_OK)
         except User.DoesNotExist:
-            if (User.objects.filter(email=serializer.data['email']) and
-                User.objects.filter(username=serializer.data['username'])):
+            if (
+                User.objects.filter(email=serializer.data['email'])
+                    and User.objects.filter(
+                        username=serializer.data['username'])):
                 return Response(
-                    {'email': ['Такое email уже есть!'], 'username': ['Такое имя уже есть!']},
+                    {'email': ['Такое email уже есть!'],
+                     'username': ['Такое имя уже есть!']},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             if User.objects.filter(username=serializer.data['username']):

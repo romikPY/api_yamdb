@@ -1,7 +1,9 @@
+from datetime import datetime
 from django.db import models
 from django.core.validators import (
     MaxValueValidator, MinValueValidator
 )
+from django.core.exceptions import ValidationError
 
 from users.models import User
 
@@ -43,6 +45,10 @@ class Title (models.Model):
         blank=True, null=True,
         verbose_name='Категория'
     )
+
+    def validate_year(value):
+        if value >= datetime.now().year:
+            raise ValidationError('Год выхода не может быть больше текущего!')
 
     def __str__(self):
         return self.name
