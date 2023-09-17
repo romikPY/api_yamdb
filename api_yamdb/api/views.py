@@ -31,24 +31,50 @@ class APIRegistration(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
+        serializer = RegistratonSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+    
         try:
             user = User.objects.get(
-                username=request.data.get('username'),
-                email=request.data.get('email')
+                username=serializer.data['username'],
+                email=serializer.data['email']
             )
-        except Exception:
-            serializer = RegistratonSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+            confirmation_code = default_token_generator.make_token(user)
+            send_mail(
+            'Subject here',
+            f'Yor confirmation code: "{confirmation_code}"',
+            settings.DEFAULT_FROM_EMAIL,
+            [serializer.data['email']],
+            fail_silently=True,
+        )
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            if (User.objects.filter(email=serializer.data['email']) and
+                User.objects.filter(username=serializer.data['username'])):
+                return Response(
+                    {'email': ['Такое email уже есть!'], 'username': ['Такое имя уже есть!']},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if User.objects.filter(username=serializer.data['username']):
+                return Response(
+                    {'username': ['Такое имя уже есть!']},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if User.objects.filter(email=serializer.data['email']):
+                return Response(
+                    {'email': ['Такое email уже есть!']},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             user = User.objects.create(**serializer.data)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Subject here',
             f'Yor confirmation code: "{confirmation_code}"',
             settings.DEFAULT_FROM_EMAIL,
-            [request.data.get('email')],
+            [serializer.data['email']],
             fail_silently=True,
         )
-        return Response(request.data, status=status.HTTP_200_OK)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class APIToken(APIView):
@@ -61,7 +87,7 @@ class APIToken(APIView):
         username = serializer.validated_data['username']
         try:
             user = User.objects.get(username=username)
-        except Exception:
+        except User.DoesNotExist:
             return Response(
                 {'username': ['Логин не найден']},
                 status=status.HTTP_404_NOT_FOUND

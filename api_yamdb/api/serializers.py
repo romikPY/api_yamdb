@@ -15,23 +15,6 @@ class RegistratonSerializer(serializers.Serializer):
         validators=[me_username_validator, username_validator],
     )
     email = serializers.EmailField(required=True, max_length=254)
-    first_name = serializers.CharField(max_length=150, required=False)
-    last_name = serializers.CharField(max_length=150, required=False)
-    bio = serializers.CharField(max_length=24, required=False)
-
-    def validate_username(self, value):
-        if User.objects.filter(username=value):
-            raise serializers.ValidationError(
-                f'Пользователь с именем {value} уже есть!'
-            )
-        return value
-
-    def validate_email(self, value):
-        if User.objects.filter(email=value):
-            raise serializers.ValidationError(
-                f'Пользователь с почтой {value} уже есть!'
-            )
-        return value
 
 
 class TokenSerializer(serializers.Serializer):
@@ -102,14 +85,17 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Genre.objects.all(),
         slug_field='slug',
     )
-    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating',
+            'id', 'name', 'year',
             'description', 'genre', 'category'
         )
+
+    def to_representation(self, instance):
+        serializer = TitleReadOnlySerializer(instance)
+        return serializer.data
 
     def validate_year(self, value):
         if value >= datetime.now().year:
@@ -117,17 +103,12 @@ class TitleSerializer(serializers.ModelSerializer):
                 'Год выхода должен быть не позже текущего!')
         return value
 
-    def get_rating(self, obj):
-        rating = Review.objects.filter(
-            title=obj.id).aggregate(Avg('score'))
-        return rating
-
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):
     """Сериализатор GET-запросов для модели Title."""
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
-    rating = serializers.IntegerField(read_only=True)
+    rating = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Title
