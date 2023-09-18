@@ -1,11 +1,10 @@
-from datetime import datetime
 from django.db import models
 from django.core.validators import (
     MaxValueValidator, MinValueValidator
 )
-from django.core.exceptions import ValidationError
 
 from users.models import User
+from .validators import validate_year
 
 MIN_VALUE = 1
 MAX_VALUE = 10
@@ -33,7 +32,10 @@ class Title (models.Model):
         max_length=256,
         verbose_name='Название произведения'
     )
-    year = models.PositiveIntegerField(verbose_name='Год выхода')
+    year = models.PositiveIntegerField(
+        verbose_name='Год выхода',
+        validators=[validate_year]
+    )
     description = models.TextField(blank=True, verbose_name='Описание')
     genre = models.ManyToManyField(
         Genre, related_name='titles',
@@ -45,10 +47,6 @@ class Title (models.Model):
         blank=True, null=True,
         verbose_name='Категория'
     )
-
-    def validate_year(value):
-        if value >= datetime.now().year:
-            raise ValidationError('Год выхода не может быть больше текущего!')
 
     def __str__(self):
         return self.name

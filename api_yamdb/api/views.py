@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.conf import settings
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
@@ -35,23 +36,20 @@ class APIRegistration(APIView):
         serializer.is_valid(raise_exception=True)
 
         try:
-            user = User.objects.get(
-                username=serializer.data['username'],
-                email=serializer.data['email']
-            )
+            user, _ = User.objects.get_or_create(**serializer.validated_data)
             confirmation_code = default_token_generator.make_token(user)
             send_mail(
                 'Subject here',
                 f'Yor confirmation code: "{confirmation_code}"',
                 settings.DEFAULT_FROM_EMAIL,
-                [serializer.data['email']],
+                [serializer.validated_data['email']],
                 fail_silently=True,
             )
             return Response(serializer.validated_data,
                             status=status.HTTP_200_OK)
-        except User.DoesNotExist:
+        except IntegrityError:
             if (
-                User.objects.filter(email=serializer.data['email'])
+                User.objects.filter(email=serializer.validated_data['email'])
                     and User.objects.filter(
                         username=serializer.data['username'])):
                 return Response(
@@ -59,26 +57,17 @@ class APIRegistration(APIView):
                      'username': ['Такое имя уже есть!']},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            if User.objects.filter(username=serializer.data['username']):
+            if User.objects.filter(
+                    username=serializer.validated_data['username']):
                 return Response(
                     {'username': ['Такое имя уже есть!']},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            if User.objects.filter(email=serializer.data['email']):
+            if User.objects.filter(email=serializer.validated_data['email']):
                 return Response(
                     {'email': ['Такое email уже есть!']},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            user = User.objects.create(**serializer.data)
-        confirmation_code = default_token_generator.make_token(user)
-        send_mail(
-            'Subject here',
-            f'Yor confirmation code: "{confirmation_code}"',
-            settings.DEFAULT_FROM_EMAIL,
-            [serializer.data['email']],
-            fail_silently=True,
-        )
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class APIToken(APIView):

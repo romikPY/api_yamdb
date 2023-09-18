@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
@@ -19,13 +17,6 @@ class RegistratonSerializer(serializers.Serializer):
 class TokenSerializer(serializers.Serializer):
     username = serializers.CharField(required=True, max_length=150)
     confirmation_code = serializers.CharField(required=True)
-
-    class Meta:
-        model = User
-        fields = (
-            'username',
-            'confirmation_code'
-        )
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -95,12 +86,6 @@ class TitleSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serializer = TitleReadOnlySerializer(instance)
         return serializer.data
-
-    def validate_year(self, value):
-        if value >= datetime.now().year:
-            raise serializers.ValidationError(
-                'Год выхода должен быть не позже текущего!')
-        return value
 
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):

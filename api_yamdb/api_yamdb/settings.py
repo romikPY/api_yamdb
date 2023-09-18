@@ -119,10 +119,6 @@ EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 
 DEFAULT_FROM_EMAIL = 'from@example.com'
 
-STATIC_URL = '/static/'
-
-STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
