@@ -48,22 +48,14 @@ class APIRegistration(APIView):
             return Response(serializer.validated_data,
                             status=status.HTTP_200_OK)
         except IntegrityError:
-            if (
-                User.objects.filter(email=serializer.validated_data['email'])
-                    and User.objects.filter(
-                        username=serializer.data['username'])):
-                return Response(
-                    {'email': ['Такое email уже есть!'],
-                     'username': ['Такое имя уже есть!']},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
             if User.objects.filter(
-                    username=serializer.validated_data['username']):
+                    username=serializer.validated_data['username']).exists():
                 return Response(
                     {'username': ['Такое имя уже есть!']},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            if User.objects.filter(email=serializer.validated_data['email']):
+            if User.objects.filter(
+                    email=serializer.validated_data['email']).exists():
                 return Response(
                     {'email': ['Такое email уже есть!']},
                     status=status.HTTP_400_BAD_REQUEST
